@@ -36,9 +36,9 @@ class SimpleBaselineExperimentRunner(ExperimentRunnerBase):
         super().__init__(train_dataset, val_dataset, model, batch_size, num_epochs, num_data_loader_workers)
 
     def _optimize(self, predicted_answers, true_answer_ids):
-        values, indices = true_answer_ids.max(1)
+        # values, indices = true_answer_ids.max(1)
         
-        loss = self.criterion(predicted_answers, indices)
+        loss = self.criterion(predicted_answers, true_answer_ids)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
