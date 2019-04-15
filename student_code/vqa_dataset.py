@@ -66,7 +66,7 @@ class VqaDataset(Dataset):
         ann = self.vqa_api_handle.dataset['annotations'][idx]
         # Load image
         img_num = ann['image_id']
-        img_fileName = self.image_filename_pattern.format('000000'+str(img_num))
+        img_fileName = self.image_filename_pattern.format("%012d"%img_num)
         img_path = self.image_dir + '/' + img_fileName
         with open(img_path, 'rb') as f:
             img = Image.open(f)
