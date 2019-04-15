@@ -1,14 +1,22 @@
 from torch.utils.data import Dataset
 from external.vqa.vqa import VQA
 
+from PIL import Image
+
+import torch
+import torchvision.transforms as transforms
 
 class VqaDataset(Dataset):
     """
     Load the VQA dataset using the VQA python API. We provide the necessary subset in the External folder, but you may
     want to reference the full repo (https://github.com/GT-Vision-Lab/VQA) for usage examples.
     """
+    word2idx_question_base = None
+    idx2word_question_base = None
+    word2idx_answer_base = None
+    idx2word_answer_base = None
 
-    def __init__(self, image_dir, question_json_file_path, annotation_json_file_path, image_filename_pattern):
+    def __init__(self, image_dir, question_json_file_path, annotation_json_file_path, image_filename_pattern, base_dict=False, transform=None):
         """
         Args:
             image_dir (string): Path to the directory with COCO images
@@ -17,10 +25,157 @@ class VqaDataset(Dataset):
                 answers together
             image_filename_pattern (string): The pattern the filenames of images in this dataset use (eg "COCO_train2014_{}.jpg")
         """
-        pass
+        self.vqa_api_handle = VQA(annotation_json_file_path, question_json_file_path)
+        self.image_filename_pattern = image_filename_pattern
+        self.image_dir = image_dir
+        if transform == None:
+            self.transform = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor()
+                ])
+        else :
+            self.transform = transform
+
+        # self.convert_image_to_features()
+
+        if base_dict:
+            # Gather all questions
+            self.questions_list = self.gather_questions()
+            # Create a vocabulary of words
+            self.word2idx_question ,self.idx2word_question = build_volcabulary(self.questions_list, -1)
+
+            self.answers_list = self.gather_answers()
+            self.word2idx_answer, self.idx2word_answer = build_volcabulary(self.answers_list, -1)
+
+            self.valid_annotations = self.ann_idx_to_consider(self.word2idx_answer)
+
+            VqaDataset.word2idx_question_base = self.word2idx_question
+            VqaDataset.word2idx_answer_base = self.word2idx_answer
+        else:
+            self.valid_annotations = self.ann_idx_to_consider(VqaDataset.word2idx_answer_base)
+
 
     def __len__(self):
-        raise NotImplementedError()
+        return len(self.valid_annotations)
+        # return len(self.vqa_api_handle.dataset['annotations'])
+        # raise NotImplementedError()
 
-    def __getitem__(self, idx):
-        raise NotImplementedError()
+    def __getitem__(self, elem_idx):
+        idx = self.valid_annotations[elem_idx]
+        # Get image number based on ID.
+        ann = self.vqa_api_handle.dataset['annotations'][idx]
+        # Load image
+        img_num = ann['image_id']
+        img_fileName = self.image_filename_pattern.format('000000'+str(img_num))
+        img_path = self.image_dir + '/' + img_fileName
+        with open(img_path, 'rb') as f:
+            img = Image.open(f)
+            img = img.convert('RGB')
+            img = self.transform(img)
+            # img = transforms.ToTensor()(img)
+        
+        # Get list of questions based on image number.
+        question_id = ann['question_id']
+        question = self.get_question_for(idx)
+        question_indices = self.get_indices(question, VqaDataset.word2idx_question_base)
+        # question_indices = [self.word2idx_question[word] for word in question.split()]
+        question_vec = torch.zeros(len(VqaDataset.word2idx_question_base))
+        question_vec[question_indices] = 1
+
+        # Get annotations of the respective questions.
+        answer = self.get_answer_for(idx)
+        answer_indices = self.get_indices(answer, VqaDataset.word2idx_answer_base)
+        # answer_indices = [self.word2idx_answer[word] for word in answer.split()]
+        answer_vec = torch.zeros(len(VqaDataset.word2idx_answer_base))
+        answer_vec[answer_indices] = 1
+
+        item = {'image': img, 'question':question_vec, 'answers':answer_vec}
+
+        return item
+
+    def convert_image_to_features():
+        # leNet = googlenet.googlenet(pretrained=True, only_features=True)
+        for idx in range(len(self.vqa_api_handle.dataset['annotations'])):
+            ann = self.vqa_api_handle.dataset['annotations'][idx]
+            # Load image
+            img_num = ann['image_id']
+            img_fileName = self.image_filename_pattern.format('000000'+str(img_num))
+            img_path = self.image_dir + '/' + img_fileName
+            with open(img_path, 'rb') as f:
+                img = Image.open(f)
+                img = img.convert('RGB')
+                img = self.transform(img)
+                # img = transform(img)
+
+    def get_indices(self, sentence, dictionary):
+        indices = []
+        for word in sentence.split():
+            if word in dictionary:
+                indices.append(dictionary[word])
+        return indices
+
+    def get_question_for(self, idx):
+        ann = self.vqa_api_handle.dataset['annotations'][idx]
+        question_id = ann['question_id']
+        question = self.vqa_api_handle.qqa[question_id]['question']
+        question = question.lower().replace("?","")
+        return question
+
+    def gather_questions(self):
+        questions = []
+        for idx in range(len(self.vqa_api_handle.dataset['annotations'])):
+            questions.append(self.get_question_for(idx))
+        return questions
+
+    def get_answer_for(self, idx):
+        ann = self.vqa_api_handle.dataset['annotations'][idx]
+        question_id = ann['question_id']
+        # # If we want to use all the answers
+        # list_of_answers = self.vqa_api_handle.qa[question_id]['answers']
+        # answer = ""
+        # for a in list_of_answers:
+        #     if((a['answer_confidence'] == 'yes' or a['answer_confidence'] == 'maybe') and not a['answer'] in answer):
+        #         answer = answer + str(a['answer']) + " "
+        answer = self.vqa_api_handle.qa[question_id]['multiple_choice_answer']
+        return answer
+
+    def gather_answers(self):
+        answers = []
+        for idx in range(len(self.vqa_api_handle.dataset['annotations'])):
+            answer = self.get_answer_for(idx)
+            answers.append(answer)
+        return answers
+
+    def ann_idx_to_consider(self, ans_volabulary):
+        valid_annotations = []
+        for idx in range(len(self.vqa_api_handle.dataset['annotations'])):
+            answer = self.get_answer_for(idx)
+            if answer in ans_volabulary:
+                valid_annotations.append(idx)
+        return valid_annotations
+
+def build_volcabulary(sentence_lists, max_elemets):
+    tokenized_sentences = tokenize_sentences(sentence_lists)
+    vocabulary = []
+    vocabulary_count = []
+    for sentence in tokenized_sentences:
+        for token in sentence:
+            if token not in vocabulary:
+                vocabulary.append(token)
+                vocabulary_count.append(1)
+            else:
+                vocabulary_count[vocabulary.index(token)] = vocabulary_count[vocabulary.index(token)] + 1
+    
+    if(max_elemets > 0):
+        # Sort the vocabulary based on vocabulary_count
+        vocabulary = [x for _,x in sorted(zip(vocabulary_count, vocabulary), reverse=True)]
+        vocabulary = vocabulary[:max_elemets]
+
+    word2idx = {w: idx for (idx, w) in enumerate(vocabulary)}
+    idx2word = {idx: w for (idx, w) in enumerate(vocabulary)}
+    return word2idx, idx2word
+        
+
+def tokenize_sentences(sentences):
+        tokens = [x.split() for x in sentences]
+        return tokens 

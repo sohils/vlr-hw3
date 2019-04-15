@@ -14,7 +14,7 @@ model_urls = {
 
 
 def googlenet(pretrained=False, **kwargs):
-    r"""GoogLeNet (Inception v1) model architecture from
+    """GoogLeNet (Inception v1) model architecture from
     `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -34,8 +34,9 @@ def googlenet(pretrained=False, **kwargs):
 
 class GoogLeNet(nn.Module):
 
-    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=True):
+    def __init__(self, only_features=False, num_classes=1000, aux_logits=True, transform_input=False, init_weights=True):
         super(GoogLeNet, self).__init__()
+        self.only_features = only_features
         self.aux_logits = aux_logits
         self.transform_input = transform_input
 
@@ -133,6 +134,8 @@ class GoogLeNet(nn.Module):
         # N x 1024 x 1 x 1
         x = x.view(x.size(0), -1)
         # N x 1024
+        if self.only_features:
+            return x
         x = self.dropout(x)
         x = self.fc(x)
         # N x 1000 (num_classes)
