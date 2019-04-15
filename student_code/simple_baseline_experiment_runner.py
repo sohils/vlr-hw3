@@ -30,8 +30,8 @@ class SimpleBaselineExperimentRunner(ExperimentRunnerBase):
 
         self.criterion = torch.nn.NLLLoss()
 
-        self.optimizer = torch.optim.SGD({'params': model.question_embedding.parameters(), 'lr': 0.8},
-                {'params': model.answering.parameters()},lr=1e-2, momentum=0.9)
+        self.optimizer = torch.optim.SGD([{'params': model.question_embedding.parameters(), 'lr': 0.8},
+                {'params': model.answering.parameters()}],lr=1e-2, momentum=0.9)
 
         super().__init__(train_dataset, val_dataset, model, batch_size, num_epochs, num_data_loader_workers)
 
