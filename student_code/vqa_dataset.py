@@ -89,7 +89,7 @@ class VqaDataset(Dataset):
         answer_vec = torch.zeros(len(VqaDataset.word2idx_answer_base))
         answer_vec[answer_indices] = 1
 
-        item = {'image': img, 'question':question_vec, 'answers':answer_vec}
+        item = {'image': img, 'question':question_vec, 'answer':answer_vec}
 
         return item
 
