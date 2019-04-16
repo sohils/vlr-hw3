@@ -15,7 +15,7 @@ def do(annotation_json_file_path, question_json_file_path, image_filename_patter
         ])
     leNet = googlenet.googlenet(pretrained=True, only_features=True)
 
-    for idx in range(len(self.vqa_api_handle.dataset['annotations'])):
+    for idx in range(len(vqa_api_handle.dataset['annotations'])):
         ann = vqa_api_handle.dataset['annotations'][idx]
         img_num = ann['image_id']
         img_fileName = image_filename_pattern.format("%012d"%img_num)
@@ -24,7 +24,7 @@ def do(annotation_json_file_path, question_json_file_path, image_filename_patter
         with open(img_path, 'rb') as f:
             img = Image.open(f)
             img = img.convert('RGB')
-            img = self.transform(img).cuda()
+            img = transform(img).cuda()
             image_features = leNet(img).cpu().numpy()
             np.save(feature_save_path+image_filename_pattern.format("%012d"%img_num)[0:-3]+"npy",image_features)
             
