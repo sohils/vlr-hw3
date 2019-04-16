@@ -102,7 +102,7 @@ class ExperimentRunnerBase(object):
                 self.writer.add_scalar('train/accuracy', acc[0], n_iter)
 
                 if current_step % self._log_freq == 0:
-                    print("Epoch: {}, Batch {}/{} has loss {}".format(epoch, batch_id, num_batches, loss))
+                    print("Epoch: {}, Batch {}/{} has loss {} and accuracy {}".format(epoch, batch_id, num_batches, loss, acc[0].cpu().numpy()[0]))
                     # TODO: you probably want to plot something here
 
                 if current_step % self._test_freq == 0:

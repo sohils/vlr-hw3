@@ -136,6 +136,8 @@ class VqaDataset(Dataset):
         # for a in list_of_answers:
         #     if((a['answer_confidence'] == 'yes' or a['answer_confidence'] == 'maybe') and not a['answer'] in answer):
         #         answer = answer + str(a['answer']) + " "
+        
+        # Only multiple choice answer
         answer = self.vqa_api_handle.qa[question_id]['multiple_choice_answer']
         return answer
 
