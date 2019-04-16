@@ -14,6 +14,7 @@ def do(annotation_json_file_path, question_json_file_path, image_filename_patter
         transforms.ToTensor()
         ])
     leNet = googlenet.googlenet(pretrained=True, only_features=True)
+    leNet = leNet.cuda()
 
     for idx in range(len(vqa_api_handle.dataset['annotations'])):
         ann = vqa_api_handle.dataset['annotations'][idx]
