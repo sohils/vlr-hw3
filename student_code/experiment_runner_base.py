@@ -13,8 +13,8 @@ class ExperimentRunnerBase(object):
     def __init__(self, train_dataset, val_dataset, model, batch_size, num_epochs, num_data_loader_workers=10):
         self._model = model
         self._num_epochs = num_epochs
-        self._log_freq = 10  # Steps
-        self._test_freq = 250  # Steps
+        self._log_freq = 100  # Steps
+        self._test_freq = 10000  # Steps
 
         self._train_dataset_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_data_loader_workers)
 
@@ -68,8 +68,8 @@ class ExperimentRunnerBase(object):
 
             validate_step = step * len(self._val_dataset_loader) + batch_id
 
-            self.writer.add_scalar('validate/loss', loss, validate_step)
-            self.writer.add_scalar('validate/accuracy', acc[0], validate_step)
+            # self.writer.add_scalar('validate/loss', loss, validate_step)
+            # self.writer.add_scalar('validate/accuracy', acc[0], validate_step)
         return acc[0]
 
     def train(self):
@@ -80,7 +80,6 @@ class ExperimentRunnerBase(object):
             for batch_id, batch_data in enumerate(self._train_dataset_loader):
                 self._model.train()  # Set the model to train mode
                 current_step = epoch * num_batches + batch_id
-                print(current_step)
 
                 # ============
                 # TODO: Run the model and get the ground truth answers that you'll pass to your optimizer
@@ -99,17 +98,19 @@ class ExperimentRunnerBase(object):
                 acc = self.accuracy(predicted_answer, ground_truth_indices)
                 
                 n_iter = epoch * num_batches + batch_id
-                self.writer.add_scalar('train/loss', loss, n_iter)
-                self.writer.add_scalar('train/accuracy', acc[0], n_iter)
 
                 if current_step % self._log_freq == 0:
                     print("Epoch: {}, Batch {}/{} has loss {} and accuracy {}".format(epoch, batch_id, num_batches, loss, acc[0].cpu().numpy()[0]))
                     # TODO: you probably want to plot something here
+                    self.writer.add_scalar('train/loss', loss, n_iter)
+                    self.writer.add_scalar('train/accuracy', acc[0], n_iter)
 
-                if current_step % self._test_freq == 0:
+                if ((current_step % self._test_freq == 0) and current_step):
                     self._model.eval()
                     val_accuracy = self.validate(current_step/self._test_freq)
                     print("Epoch: {} has val accuracy {}".format(epoch, val_accuracy))
+                    # self.writer.add_scalar('test/loss', loss, n_iter)
+                    self.writer.add_scalar('test/accuracy', val_accuracy.cpu().numpy()[0], n_iter)
                     # TODO: you probably want to plot something here
 
 
