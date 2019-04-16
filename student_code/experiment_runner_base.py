@@ -14,7 +14,7 @@ class ExperimentRunnerBase(object):
         self._model = model
         self._num_epochs = num_epochs
         self._log_freq = 100  # Steps
-        self._test_freq = 10000  # Steps
+        self._test_freq = 1000  # Steps
 
         self._train_dataset_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_data_loader_workers)
 
