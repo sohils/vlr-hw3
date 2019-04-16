@@ -7,6 +7,8 @@ from PIL import Image
 import torch
 import torchvision.transforms as transforms
 
+import numpy as np
+
 def do(annotation_json_file_path, question_json_file_path, image_filename_pattern, image_dir,feature_save_path):
     vqa_api_handle = VQA(annotation_json_file_path, question_json_file_path)
     transform = transforms.Compose([
