@@ -9,7 +9,7 @@ class ExperimentRunnerBase(object):
     This base class contains the simple train and validation loops for your VQA experiments.
     Anything specific to a particular experiment (Simple or Coattention) should go in the corresponding subclass.
     """
-
+    
     def __init__(self, train_dataset, val_dataset, model, batch_size, num_epochs, num_data_loader_workers=10):
         self._model = model
         self._num_epochs = num_epochs
@@ -35,7 +35,7 @@ class ExperimentRunnerBase(object):
         """
         raise NotImplementedError()
 
-    def accuracy(output, target, topk=(1,)):
+    def accuracy(self, output, target, topk=(1,)):
         """
         Computes the accuracy over the k top predictions for the specified values of k
         """
@@ -43,7 +43,7 @@ class ExperimentRunnerBase(object):
             maxk = max(topk)
             batch_size = target.size(0)
 
-            _, pred = output.topk(maxk, 1, True, True)
+            _, pred = torch.topk(output, maxk, 1, True, True)
             pred = pred.t()
             correct = pred.eq(target.view(1, -1).expand_as(pred))
 
@@ -53,16 +53,24 @@ class ExperimentRunnerBase(object):
                 res.append(correct_k.mul_(100.0 / batch_size))
             return res
 
-    def validate(self):
+    def validate(self, step):
         # TODO. Should return your validation accuracy
         for batch_id, batch_data in enumerate(self._val_dataset_loader):
-            predicted_answer = self._model(batch_data['image'], batch_data['question'])
-            ground_truth_answer = batch_data['answer']
+            image_input = batch_data['image'].cuda() if self._cuda else batch_data['image']
+            question_input = batch_data['question'].cuda() if self._cuda else batch_data['question']
+            predicted_answer = self._model(image_input, question_input)
+            ground_truth_answer = batch_data['answer'].cuda() if self._cuda else batch_data['answer']
+            values, ground_truth_indices = ground_truth_answer.max(1)
 
-            loss = self._optimize(predicted_answer, ground_truth_answer)
-            # Find Accuracy
+            loss = self._optimize(predicted_answer, ground_truth_indices)
 
-        # Return Accuracy
+            acc = self.accuracy(predicted_answer, ground_truth_indices)
+
+            validate_step = step * len(self._val_dataset_loader) + batch_id
+
+            self.writer.add_scalar('validate/loss', loss, validate_step)
+            self.writer.add_scalar('validate/accuracy', acc[0], validate_step)
+        return acc[0]
 
     def train(self):
 
@@ -77,10 +85,10 @@ class ExperimentRunnerBase(object):
                 # TODO: Run the model and get the ground truth answers that you'll pass to your optimizer
                 # This logic should be generic; not specific to either the Simple Baseline or CoAttention.
                 self._model.eval()
-                image_input = batch_data['image'].cuda()
-                question_input = batch_data['question'].cuda()
+                image_input = batch_data['image'].cuda() if self._cuda else batch_data['image']
+                question_input = batch_data['question'].cuda() if self._cuda else batch_data['question']
                 predicted_answer = self._model(image_input, question_input)
-                ground_truth_answer = batch_data['answer'].cuda()
+                ground_truth_answer = batch_data['answer'].cuda() if self._cuda else batch_data['answer']
                 values, ground_truth_indices = ground_truth_answer.max(1)
                 # ============
                 self._model.train()
@@ -88,10 +96,10 @@ class ExperimentRunnerBase(object):
                 loss = self._optimize(predicted_answer, ground_truth_indices)
 
                 acc = self.accuracy(predicted_answer, ground_truth_indices)
-
+                
                 n_iter = epoch * num_batches + batch_id
-                self.writer.add_scalar('train/loss',loss,n_iter)
-                self.writer.add_scalar('train/loss',acc,n_iter)
+                self.writer.add_scalar('train/loss', loss, n_iter)
+                self.writer.add_scalar('train/accuracy', acc[0], n_iter)
 
                 if current_step % self._log_freq == 0:
                     print("Epoch: {}, Batch {}/{} has loss {}".format(epoch, batch_id, num_batches, loss))
@@ -99,7 +107,7 @@ class ExperimentRunnerBase(object):
 
                 if current_step % self._test_freq == 0:
                     self._model.eval()
-                    val_accuracy = self.validate()
+                    val_accuracy = self.validate(current_step/self._test_freq)
                     print("Epoch: {} has val accuracy {}".format(epoch, val_accuracy))
                     # TODO: you probably want to plot something here
 

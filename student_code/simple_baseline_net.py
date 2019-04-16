@@ -16,7 +16,7 @@ class SimpleBaselineNet(nn.Module):
         # Question features
         self.question_embedding = nn.Sequential(nn.Linear(question_dict_size, word_feature_szie))
 
-        self.answering = nn.Sequential(nn.Linear(2*word_feature_szie, answer_dict_size),nn.Softmax())
+        self.answering = nn.Sequential(nn.Linear(2*word_feature_szie, answer_dict_size))
 
 
     def forward(self, image, question_encoding):

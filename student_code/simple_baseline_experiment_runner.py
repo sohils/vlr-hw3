@@ -28,7 +28,7 @@ class SimpleBaselineExperimentRunner(ExperimentRunnerBase):
 
         model = SimpleBaselineNet(question_dict_size, answer_dict_size, word_feature_szie)
 
-        self.criterion = torch.nn.NLLLoss()
+        self.criterion = torch.nn.CrossEntropyLoss()
 
         self.optimizer = torch.optim.SGD([{'params': model.question_embedding.parameters(), 'lr': 0.8},
                 {'params': model.answering.parameters()}],lr=1e-2, momentum=0.9)
@@ -37,8 +37,8 @@ class SimpleBaselineExperimentRunner(ExperimentRunnerBase):
 
     def _optimize(self, predicted_answers, true_answer_ids):
         # values, indices = true_answer_ids.max(1)
-        
-        loss = self.criterion(predicted_answers, true_answer_ids)
+        # print(true_answer_ids.long())
+        loss = self.criterion(predicted_answers, true_answer_ids.long())
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
