@@ -26,6 +26,7 @@ def do(annotation_json_file_path, question_json_file_path, image_filename_patter
             img = Image.open(f)
             img = img.convert('RGB')
             img = transform(img).cuda()
+            img = img.unsqueeze(0)
             image_features = leNet(img).cpu().numpy()
             np.save(feature_save_path+image_filename_pattern.format("%012d"%img_num)[0:-3]+"npy",image_features)
             
