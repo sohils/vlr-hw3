@@ -18,6 +18,7 @@ def do(annotation_json_file_path, question_json_file_path, image_filename_patter
     for idx in range(len(vqa_api_handle.dataset['annotations'])):
         ann = vqa_api_handle.dataset['annotations'][idx]
         img_num = ann['image_id']
+        print(img_num)
         img_fileName = image_filename_pattern.format("%012d"%img_num)
         img_path = image_dir + '/' + img_fileName
         print("Processing image :" + img_fileName)
