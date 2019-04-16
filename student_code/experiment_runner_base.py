@@ -13,7 +13,7 @@ class ExperimentRunnerBase(object):
     def __init__(self, train_dataset, val_dataset, model, batch_size, num_epochs, num_data_loader_workers=10):
         self._model = model
         self._num_epochs = num_epochs
-        self._log_freq = 1  # Steps
+        self._log_freq = 10  # Steps
         self._test_freq = 250  # Steps
 
         self._train_dataset_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_data_loader_workers)
@@ -94,7 +94,7 @@ class ExperimentRunnerBase(object):
                 # ============
                 self._model.train()
                 # Optimize the model according to the predictions
-                loss = self._optimize(predicted_answer, ground_truth_indices)
+                loss = self._optimize(predicted_answer, ground_truth_indices, train=True)
 
                 acc = self.accuracy(predicted_answer, ground_truth_indices)
                 
