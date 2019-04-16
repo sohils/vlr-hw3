@@ -80,6 +80,7 @@ class ExperimentRunnerBase(object):
             for batch_id, batch_data in enumerate(self._train_dataset_loader):
                 self._model.train()  # Set the model to train mode
                 current_step = epoch * num_batches + batch_id
+                print(current_step)
 
                 # ============
                 # TODO: Run the model and get the ground truth answers that you'll pass to your optimizer
