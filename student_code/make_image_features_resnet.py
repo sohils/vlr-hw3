@@ -18,19 +18,13 @@ model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
     and callable(models.__dict__[name]))
 
-parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
-                    choices=model_names,
-                    help='model architecture: ' +
-                        ' | '.join(model_names) +
-                        ' (default: resnet18)')
 
 def do(annotation_json_file_path, question_json_file_path, image_filename_pattern, image_dir, feature_save_path):
-    args = parser.parse_args()
 
     cocodataset = COCODataset(image_dir=image_dir)
     coco_dataloader = DataLoader(cocodataset,batch_size=64,  shuffle=False, num_workers=10)
 
-    resNet = models.__dict__[args.arch](pretrained=True)
+    resNet = models.__dict__['resnet18'](pretrained=True)
     resNet = list(resNet.children())[:-2]
     resNet = nn.Sequential(*resNet)
     resNet = resNet.cuda()
