@@ -22,7 +22,7 @@ model_names = sorted(name for name in models.__dict__
 def do(annotation_json_file_path, question_json_file_path, image_filename_pattern, image_dir, feature_save_path):
 
     cocodataset = COCODataset(image_dir=image_dir)
-    coco_dataloader = DataLoader(cocodataset,batch_size=64,  shuffle=False, num_workers=10)
+    coco_dataloader = DataLoader(cocodataset,batch_size=256,  shuffle=False, num_workers=10)
 
     resNet = models.__dict__['resnet18'](pretrained=True)
     resNet = list(resNet.children())[:-2]
@@ -38,11 +38,11 @@ def do(annotation_json_file_path, question_json_file_path, image_filename_patter
 
 
 if __name__ == "__main__":
-    annotation_json_file_path = "/data/vlr-hw3/data/mscoco_val2014_annotations.json"
-    question_json_file_path = "/data/vlr-hw3/data/OpenEnded_mscoco_val2014_questions.json"
-    image_dir = "/data/vlr-hw3/data/val2014/"
-    image_filename_pattern = "COCO_val2014_{}.jpg"
-    feature_save_path = "/data/vlr-hw3/data/val2014_features_resnet/"
+    annotation_json_file_path = "/data/vlr-hw3/data/mscoco_train2014_annotations.json"
+    question_json_file_path = "/data/vlr-hw3/data/OpenEnded_mscoco_train2014_questions.json"
+    image_dir = "/data/vlr-hw3/data/train2014/"
+    image_filename_pattern = "COCO_train2014_{}.jpg"
+    feature_save_path = "/data/vlr-hw3/data/train2014_features_resnet/"
     do(
         annotation_json_file_path,
         question_json_file_path,
