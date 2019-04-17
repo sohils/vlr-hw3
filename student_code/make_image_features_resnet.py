@@ -36,6 +36,7 @@ def do(annotation_json_file_path, question_json_file_path, image_filename_patter
     resNet = resNet.cuda()
 
     for batch_id, batch_data in enumerate(coco_dataloader):
+        print("Processing Batch number : " + str(batch_id))
         features = resNet(batch_data['image']).detach().cpu().numpy()
         for idx, fileName in enumerate(batch_data['name']):
             np.save(feature_save_path+fileName[0:-3]+"npy",features[idx])
