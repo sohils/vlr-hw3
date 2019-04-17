@@ -6,6 +6,8 @@ from PIL import Image
 import torch
 import torchvision.transforms as transforms
 
+import numpy as np
+
 class VqaDataset(Dataset):
     """
     Load the VQA dataset using the VQA python API. We provide the necessary subset in the External folder, but you may
@@ -16,7 +18,8 @@ class VqaDataset(Dataset):
     word2idx_answer_base = None
     idx2word_answer_base = None
 
-    def __init__(self, image_dir, question_json_file_path, annotation_json_file_path, image_filename_pattern, base_dict=False, transform=None):
+    def __init__(self, image_dir, question_json_file_path, annotation_json_file_path, image_filename_pattern, base_dict=False, transform=None,
+    image_feature_dir=None, image_feature_pattern=None):
         """
         Args:
             image_dir (string): Path to the directory with COCO images
@@ -28,6 +31,8 @@ class VqaDataset(Dataset):
         self.vqa_api_handle = VQA(annotation_json_file_path, question_json_file_path)
         self.image_filename_pattern = image_filename_pattern
         self.image_dir = image_dir
+        self.image_feature_dir = image_feature_dir
+        self.image_feature_pattern = image_feature_pattern
         if transform == None:
             self.transform = transforms.Compose([
                 transforms.Resize((224, 224)),
@@ -35,8 +40,6 @@ class VqaDataset(Dataset):
                 ])
         else :
             self.transform = transform
-
-        # self.convert_image_to_features()
 
         if base_dict:
             # Gather all questions
@@ -53,6 +56,8 @@ class VqaDataset(Dataset):
             VqaDataset.word2idx_answer_base = self.word2idx_answer
         else:
             self.valid_annotations = self.ann_idx_to_consider(VqaDataset.word2idx_answer_base)
+        
+        self.image_features = self.load_image_to_features(image_feature_dir,image_feature_pattern)
 
 
     def __len__(self):
@@ -66,13 +71,16 @@ class VqaDataset(Dataset):
         ann = self.vqa_api_handle.dataset['annotations'][idx]
         # Load image
         img_num = ann['image_id']
-        img_fileName = self.image_filename_pattern.format("%012d"%img_num)
-        img_path = self.image_dir + '/' + img_fileName
-        with open(img_path, 'rb') as f:
-            img = Image.open(f)
-            img = img.convert('RGB')
-            img = self.transform(img)
-            # img = transforms.ToTensor()(img)
+        if(self.image_feature_dir == None or self.image_feature_pattern == None):
+            img_fileName = self.image_filename_pattern.format("%012d"%img_num)
+            img_path = self.image_dir + '/' + img_fileName
+            with open(img_path, 'rb') as f:
+                img = Image.open(f)
+                img = img.convert('RGB')
+                img = self.transform(img)
+                # img = transforms.ToTensor()(img)
+        else:
+            img = self.image_features[idx]
         
         # Get list of questions based on image number.
         question_id = ann['question_id']
@@ -92,6 +100,18 @@ class VqaDataset(Dataset):
         item = {'image': img, 'question':question_vec, 'answer':answer_vec}
 
         return item
+    
+    def load_image_to_features(image_feature_dir,image_feature_pattern):
+        features = []
+        for idx in range(len(self.valid_annotations)):
+            ann = self.vqa_api_handle.dataset['annotations'][idx]
+            img_num = ann['image_id']
+            img_feature_fileName = self.image_feature_pattern.format("%012d"%img_num)
+            img_feature_path = self.image_feature_dir + '/' + img_feature_fileName
+            feature = np.load(img_feature_path)
+            features.append(feature)
+        return features
+
 
     def convert_image_to_features():
         # leNet = googlenet.googlenet(pretrained=True, only_features=True)
