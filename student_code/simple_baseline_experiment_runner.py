@@ -34,6 +34,7 @@ class SimpleBaselineExperimentRunner(ExperimentRunnerBase):
             model = SimpleBaselineNet(question_dict_size, answer_dict_size, word_feature_szie)
         else 
             model = SimpleBaselineNet(question_dict_size, answer_dict_size, word_feature_szie, True)
+            
         self.criterion = torch.nn.CrossEntropyLoss()
 
         self.optimizer = torch.optim.SGD([{'params': model.question_embedding.parameters(), 'lr': 0.8},

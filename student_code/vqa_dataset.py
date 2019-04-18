@@ -57,7 +57,7 @@ class VqaDataset(Dataset):
         else:
             self.valid_annotations = self.ann_idx_to_consider(VqaDataset.word2idx_answer_base)
         
-        self.image_features = self.load_image_to_features(image_feature_dir,image_feature_pattern)
+        # self.image_features = self.load_image_to_features(image_feature_dir,image_feature_pattern)
 
 
     def __len__(self):
@@ -81,6 +81,7 @@ class VqaDataset(Dataset):
                 # img = transforms.ToTensor()(img)
         else:
             img = self.image_features[idx]
+            # img = np.load(self.image_feature_dir + '/' + self.image_feature_pattern.format("%012d"%img_num))
         
         # Get list of questions based on image number.
         question_id = ann['question_id']
@@ -97,7 +98,7 @@ class VqaDataset(Dataset):
         answer_vec = torch.zeros(len(VqaDataset.word2idx_answer_base))
         answer_vec[answer_indices] = 1
 
-        item = {'image': img, 'question':question_vec, 'answer':answer_vec}
+        item = {'image':img, 'question':question_vec, 'answer':answer_vec}
 
         return item
     
