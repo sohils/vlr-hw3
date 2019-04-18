@@ -57,7 +57,7 @@ class VqaDataset(Dataset):
         else:
             self.valid_annotations = self.ann_idx_to_consider(VqaDataset.word2idx_answer_base)
         
-        # self.image_features = self.load_image_to_features(image_feature_dir,image_feature_pattern)
+        self.image_features = self.load_image_to_features(image_feature_dir,image_feature_pattern)
 
 
     def __len__(self):
@@ -102,7 +102,7 @@ class VqaDataset(Dataset):
 
         return item
     
-    def load_image_to_features(image_feature_dir,image_feature_pattern):
+    def load_image_to_features(self, image_feature_dir, image_feature_pattern):
         features = []
         for idx in range(len(self.valid_annotations)):
             ann = self.vqa_api_handle.dataset['annotations'][idx]

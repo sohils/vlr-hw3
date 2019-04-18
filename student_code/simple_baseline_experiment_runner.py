@@ -32,7 +32,7 @@ class SimpleBaselineExperimentRunner(ExperimentRunnerBase):
 
         if(train_image_feature_dir == None):
             model = SimpleBaselineNet(question_dict_size, answer_dict_size, word_feature_size)
-        else 
+        else:
             model = SimpleBaselineNet(question_dict_size, answer_dict_size, word_feature_size, True)
 
         self.criterion = torch.nn.CrossEntropyLoss()
