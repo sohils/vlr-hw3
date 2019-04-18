@@ -28,7 +28,8 @@ class SimpleBaselineNet(nn.Module):
 
         # N x 1024
         word_embeddings = self.question_embedding(question_encoding)
-
+        print(image_features.shape)
+        print(word_embeddings.shape)
         combined = torch.cat((image_features,word_embeddings), 1)
 
         x = self.answering(combined)
