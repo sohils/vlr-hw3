@@ -22,7 +22,7 @@ model_names = sorted(name for name in models.__dict__
 def do(annotation_json_file_path, question_json_file_path, image_filename_pattern, image_dir, feature_save_path):
 
     cocodataset = COCODataset(image_dir=image_dir)
-    coco_dataloader = DataLoader(cocodataset,batch_size=256,  shuffle=False, num_workers=10)
+    coco_dataloader = DataLoader(cocodataset,batch_size=128,  shuffle=False, num_workers=10)
 
     resNet = models.__dict__['resnet18'](pretrained=True)
     resNet = list(resNet.children())[:-2]
