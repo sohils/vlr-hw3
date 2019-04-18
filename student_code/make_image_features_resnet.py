@@ -38,11 +38,11 @@ def do(annotation_json_file_path, question_json_file_path, image_filename_patter
 
 
 if __name__ == "__main__":
-    annotation_json_file_path = "/data/vlr-hw3/data/mscoco_train2014_annotations.json"
-    question_json_file_path = "/data/vlr-hw3/data/OpenEnded_mscoco_train2014_questions.json"
-    image_dir = "/data/vlr-hw3/data/train2014/"
-    image_filename_pattern = "COCO_train2014_{}.jpg"
-    feature_save_path = "/data/vlr-hw3/data/train2014_features_resnet/"
+    annotation_json_file_path = "/data/vlr-hw3/data/mscoco_val2014_annotations.json"
+    question_json_file_path = "/data/vlr-hw3/data/OpenEnded_mscoco_val2014_questions.json"
+    image_dir = "/data/vlr-hw3/data/val2014/"
+    image_filename_pattern = "COCO_val2014_{}.jpg"
+    feature_save_path = "/data/vlr-hw3/data/val2014_features_resnet/"
     do(
         annotation_json_file_path,
         question_json_file_path,
