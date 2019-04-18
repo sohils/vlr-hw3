@@ -9,7 +9,7 @@ class SimpleBaselineExperimentRunner(ExperimentRunnerBase):
     Sets up the Simple Baseline model for training. This class is specifically responsible for creating the model and optimizing it.
     """
     def __init__(self, train_image_dir, train_question_path, train_annotation_path, train_image_feature_dir,
-                 test_image_dir,test_question_path,test_annotation_path, test_image_feature_dir
+                 test_image_dir,test_question_path,test_annotation_path, test_image_feature_dir,
                  batch_size, num_epochs,
                  num_data_loader_workers):
 
@@ -28,12 +28,12 @@ class SimpleBaselineExperimentRunner(ExperimentRunnerBase):
         
         question_dict_size = len(train_dataset.word2idx_question_base)
         answer_dict_size = len(train_dataset.word2idx_answer_base)
-        word_feature_szie = 1024
+        word_feature_size = 1024
 
         if(train_image_feature_dir == None):
-            model = SimpleBaselineNet(question_dict_size, answer_dict_size, word_feature_szie)
+            model = SimpleBaselineNet(question_dict_size, answer_dict_size, word_feature_size)
         else 
-            model = SimpleBaselineNet(question_dict_size, answer_dict_size, word_feature_szie, True)
+            model = SimpleBaselineNet(question_dict_size, answer_dict_size, word_feature_size, True)
 
         self.criterion = torch.nn.CrossEntropyLoss()
 
