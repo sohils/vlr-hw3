@@ -14,7 +14,7 @@ class COCODataset(Dataset):
         self.image_names = [item for item in os.listdir(root_dir) if os.path.isfile(os.path.join(root_dir, item))]
 
         self.transform = transforms.Compose([
-            transforms.Resize((224, 224)),
+            transforms.Resize((448, 448)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
             ])
