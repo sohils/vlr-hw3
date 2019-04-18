@@ -85,7 +85,7 @@ class VqaDataset(Dataset):
                 # img = torch.from_numpy(self.image_features[elem_idx]).squeeze()
             # except IndexError:
             #     print(idx)
-            img = torch.from_numpy(self.image_features[elem_idx])
+            img = torch.from_numpy(self.image_features[elem_idx]).squeeze()
             # img = np.load(self.image_feature_dir + '/' + self.image_feature_pattern.format("%012d"%img_num))
         
         # Get list of questions based on image number.
