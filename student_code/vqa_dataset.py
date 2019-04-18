@@ -81,7 +81,11 @@ class VqaDataset(Dataset):
                 img = self.transform(img)
                 # img = transforms.ToTensor()(img)
         else:
-            img = self.image_features[idx]
+            try:
+                img = torch.from_numpy(self.image_features[elem_idx])
+            except IndexError:
+                print(idx)
+            # img = torch.from_numpy(self.image_features[elem_idx])
             # img = np.load(self.image_feature_dir + '/' + self.image_feature_pattern.format("%012d"%img_num))
         
         # Get list of questions based on image number.
