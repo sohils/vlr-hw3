@@ -56,7 +56,7 @@ class VqaDataset(Dataset):
             VqaDataset.word2idx_answer_base = self.word2idx_answer
         else:
             self.valid_annotations = self.ann_idx_to_consider(VqaDataset.word2idx_answer_base)
-        
+        print(len(self.valid_annotations))
         self.image_features = self.load_image_to_features(image_feature_dir,image_feature_pattern)
 
 
