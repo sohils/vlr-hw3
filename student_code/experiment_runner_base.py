@@ -76,7 +76,7 @@ class ExperimentRunnerBase(object):
     def train(self):
 
         for epoch in range(self._num_epochs):
-            print(self._num_epochs)
+            
             num_batches = len(self._train_dataset_loader)
 
             for batch_id, batch_data in enumerate(self._train_dataset_loader):

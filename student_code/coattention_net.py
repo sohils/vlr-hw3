@@ -49,7 +49,7 @@ class CoattentionNet(nn.Module):
         # Image [bx512x196]
 
         word_embeddings = self.word_embeddings(question_encoding)
-        word_embeddings = word_embeddings.view(word_embeddings.shape[0],word_embeddings.shape[2],word_embeddings.shape[1])
+        word_embeddings = word_embeddings.transpose(2,1)
         # Word Embedding [bx512xT]
         
         unigram = self.unigram(word_embeddings)
@@ -65,20 +65,20 @@ class CoattentionNet(nn.Module):
         kilogram = self.maxp(kilogram)
         kilogram = kilogram.view(kilogram.shape[0],kilogram.shape[1],kilogram.shape[3])
 
-        q_s, (h_n,c_n) = self.lstm(kilogram.view(kilogram.shape[0],kilogram.shape[2],kilogram.shape[1]))
-        q_s = q_s.view(q_s.shape[0],q_s.shape[2],q_s.shape[1])
+        q_s, (h_n,c_n) = self.lstm(kilogram.transpose(2,1))
+        q_s = q_s.transpose(2,1)
 
-        C_w = self.dp(self.tanh(torch.matmul(torch.matmul(word_embeddings.view(word_embeddings.shape[0],word_embeddings.shape[2],word_embeddings.shape[1]), self.W_b_weight), image)))
-        C_p = self.dp(self.tanh(torch.matmul(torch.matmul(kilogram.view(kilogram.shape[0],kilogram.shape[2],kilogram.shape[1]), self.W_b_weight), image)))
-        C_s = self.dp (self.tanh(torch.matmul(torch.matmul(q_s.view(q_s.shape[0],q_s.shape[2],q_s.shape[1]), self.W_b_weight), image)))
+        C_w = self.dp(self.tanh(torch.matmul(torch.matmul(word_embeddings.transpose(2,1), self.W_b_weight), image)))
+        C_p = self.dp(self.tanh(torch.matmul(torch.matmul(kilogram.transpose(2,1), self.W_b_weight), image)))
+        C_s = self.dp (self.tanh(torch.matmul(torch.matmul(q_s.transpose(2,1, self.W_b_weight), image)))
 
         H_v_w = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, word_embeddings), C_w)))
         H_v_p = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, kilogram), C_p)))
         H_v_s = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, q_s), C_s)))
 
-        H_q_w = self.dp(self.tanh(torch.matmul(self.W_q_weight, word_embeddings) + torch.matmul(torch.matmul(self.W_v_weight, image), C_w.view(C_w.shape[0], C_w.shape[2], C_w.shape[1]))))
-        H_q_p = self.dp(self.tanh(torch.matmul(self.W_q_weight, kilogram) + torch.matmul(torch.matmul(self.W_v_weight, image), C_p.view(C_p.shape[0], C_p.shape[2], C_p.shape[1]))))
-        H_q_s = self.dp(self.tanh(torch.matmul(self.W_q_weight, q_s) + torch.matmul(torch.matmul(self.W_v_weight, image), C_s.view(C_s.shape[0], C_s.shape[2], C_s.shape[1]))))
+        H_q_w = self.dp(self.tanh(torch.matmul(self.W_q_weight, word_embeddings) + torch.matmul(torch.matmul(self.W_v_weight, image), C_w.transpose(2,1)))
+        H_q_p = self.dp(self.tanh(torch.matmul(self.W_q_weight, kilogram) + torch.matmul(torch.matmul(self.W_v_weight, image), C_p.transpose(2,1)))
+        H_q_s = self.dp(self.tanh(torch.matmul(self.W_q_weight, q_s) + torch.matmul(torch.matmul(self.W_v_weight, image), C_s.transpose(2,1)))
         
 
         a_v_w = F.softmax(torch.matmul(self.w_hv, H_v_w), dim=1)
@@ -90,18 +90,18 @@ class CoattentionNet(nn.Module):
         a_v_s = F.softmax(torch.matmul(self.w_hv, H_v_s), dim=1)
         a_q_s = F.softmax(torch.matmul(self.w_hq, H_q_s), dim=1)
 
-        v_w = torch.bmm(a_v_w, image.view(image.shape[0],image.shape[2],image.shape[1]))
-        b_w = torch.bmm(a_q_w, word_embeddings.view(word_embeddings.shape[0],word_embeddings.shape[2],word_embeddings.shape[1]))
+        v_w = torch.bmm(a_v_w, image.transpose(2,1)
+        b_w = torch.bmm(a_q_w, word_embeddings.transpose(2,1)
         f_w = v_w + b_w
         f_w = f_w.view(f_w.shape[0], f_w.shape[2])
 
-        v_p = torch.bmm(a_v_p, image.view(image.shape[0],image.shape[2],image.shape[1]))
-        b_p = torch.bmm(a_q_p, word_embeddings.view(kilogram.shape[0],kilogram.shape[2],kilogram.shape[1]))
+        v_p = torch.bmm(a_v_p, image.transpose(2,1)
+        b_p = torch.bmm(a_q_p, word_embeddings.transpose(2,1)
         f_p = v_p + b_p
         f_p = f_p.view(f_p.shape[0], f_p.shape[2])
 
-        v_s = torch.bmm(a_v_s, image.view(image.shape[0],image.shape[2],image.shape[1]))
-        b_s = torch.bmm(a_q_s, q_s.view(q_s.shape[0],q_s.shape[2],q_s.shape[1]))
+        v_s = torch.bmm(a_v_s, image.transpose(2,1)
+        b_s = torch.bmm(a_q_s, q_s.transpose(2,1)
         f_s = v_s + b_s
         f_s = f_s.view(f_s.shape[0], f_s.shape[2])
 
