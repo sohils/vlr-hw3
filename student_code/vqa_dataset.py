@@ -17,6 +17,7 @@ class VqaDataset(Dataset):
     idx2word_question_base = None
     word2idx_answer_base = None
     idx2word_answer_base = None
+    VqaDataset.max_question_len = None
 
     def __init__(self, image_dir, question_json_file_path, annotation_json_file_path, image_filename_pattern, base_dict=False, transform=None,
     image_feature_dir=None, image_feature_pattern=None):
@@ -54,6 +55,7 @@ class VqaDataset(Dataset):
             
             VqaDataset.word2idx_question_base = self.word2idx_question
             VqaDataset.word2idx_answer_base = self.word2idx_answer
+            VqaDataset.max_question_len = self.max_question_len
         else:
             self.valid_annotations = self.ann_idx_to_consider(VqaDataset.word2idx_answer_base)
 
@@ -102,7 +104,7 @@ class VqaDataset(Dataset):
         answer_vec = torch.zeros(len(VqaDataset.word2idx_answer_base))
         answer_vec[answer_indices] = 1
 
-        question_indices = question_indices + (self.max_question_len - len(question_indices))*[0]
+        question_indices = question_indices + (VqaDataset.max_question_len - len(question_indices))*[0]
         question_indices = torch.tensor(question_indices)
         item = {'image':img, 'question':question_vec, 'answer':answer_vec, 'question_idxs':question_indices, 'answer_idxs':answer_indices}
         
