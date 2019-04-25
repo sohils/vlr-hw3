@@ -29,7 +29,7 @@ class CoattentionNetExperimentRunner(ExperimentRunnerBase):
         
 
         self._model = CoattentionNet(vocab_size=len(train_dataset.word2idx_question_base), embedding_dim=512)
-
+        
         self.criteron = torch.nn.CrossEntropyLoss()
 
         self.optimizer = torch.optim.Adam(self._model.parameters(), lr=4e-4, weight_decay=1e-8)

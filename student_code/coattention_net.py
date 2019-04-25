@@ -19,18 +19,19 @@ class CoattentionNet(nn.Module):
 
         self.lstm = nn.LSTM(embedding_dim, embedding_dim)
         k = 512
-        self.W_b_weight = nn.Parameter(torch.FloatTensor(embedding_dim,embedding_dim).normal_())
+        self.W_b_weight = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(embedding_dim,embedding_dim)))
         # self.W_b_bias = nn.Parameter(torch.random((embedding_dim)))
 
-        self.W_v_weight = nn.Parameter(torch.FloatTensor(k,embedding_dim).normal_())
+        self.W_v_weight = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(k,embedding_dim)))
         # self.W_v_bias = nn.Parameter(torch.random((embedding_dim)))
 
-        self.W_q_weight = nn.Parameter(torch.FloatTensor(k,embedding_dim).normal_())
+        self.W_q_weight = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(k,embedding_dim)))
         # self.W_q_bias = nn.Parameter(torch.random((embedding_dim)))
 
-        self.w_hv = nn.Parameter(torch.FloatTensor(1,k).normal_())
-        self.w_hq = nn.Parameter(torch.FloatTensor(1,k).normal_())
+        self.w_hv = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(1,k)))
+        self.w_hq = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(1,k)))
 
+        self.dp = nn.Dropout(p=0.5)
         self.tanh = nn.Tanh()
         self.softm = nn.Softmax()
 
@@ -67,17 +68,17 @@ class CoattentionNet(nn.Module):
         q_s, (h_n,c_n) = self.lstm(kilogram.view(kilogram.shape[0],kilogram.shape[2],kilogram.shape[1]))
         q_s = q_s.view(q_s.shape[0],q_s.shape[2],q_s.shape[1])
 
-        C_w = self.tanh(torch.matmul(torch.matmul(word_embeddings.view(word_embeddings.shape[0],word_embeddings.shape[2],word_embeddings.shape[1]), self.W_b_weight), image))
-        C_p = self.tanh(torch.matmul(torch.matmul(kilogram.view(kilogram.shape[0],kilogram.shape[2],kilogram.shape[1]), self.W_b_weight), image))
-        C_s = self.tanh(torch.matmul(torch.matmul(q_s.view(q_s.shape[0],q_s.shape[2],q_s.shape[1]), self.W_b_weight), image))
+        C_w = self.dp(self.tanh(torch.matmul(torch.matmul(word_embeddings.view(word_embeddings.shape[0],word_embeddings.shape[2],word_embeddings.shape[1]), self.W_b_weight), image)))
+        C_p = self.dp(self.tanh(torch.matmul(torch.matmul(kilogram.view(kilogram.shape[0],kilogram.shape[2],kilogram.shape[1]), self.W_b_weight), image)))
+        C_s = self.dp (self.tanh(torch.matmul(torch.matmul(q_s.view(q_s.shape[0],q_s.shape[2],q_s.shape[1]), self.W_b_weight), image)))
 
-        H_v_w = self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, word_embeddings), C_w))
-        H_v_p = self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, kilogram), C_p))
-        H_v_s = self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, q_s), C_s))
+        H_v_w = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, word_embeddings), C_w)))
+        H_v_p = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, kilogram), C_p)))
+        H_v_s = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, q_s), C_s)))
 
-        H_q_w = self.tanh(torch.matmul(self.W_q_weight, word_embeddings) + torch.matmul(torch.matmul(self.W_v_weight, image), C_w.view(C_w.shape[0], C_w.shape[2], C_w.shape[1])))
-        H_q_p = self.tanh(torch.matmul(self.W_q_weight, kilogram) + torch.matmul(torch.matmul(self.W_v_weight, image), C_p.view(C_p.shape[0], C_p.shape[2], C_p.shape[1])))
-        H_q_s = self.tanh(torch.matmul(self.W_q_weight, q_s) + torch.matmul(torch.matmul(self.W_v_weight, image), C_s.view(C_s.shape[0], C_s.shape[2], C_s.shape[1])))
+        H_q_w = self.dp(self.tanh(torch.matmul(self.W_q_weight, word_embeddings) + torch.matmul(torch.matmul(self.W_v_weight, image), C_w.view(C_w.shape[0], C_w.shape[2], C_w.shape[1]))))
+        H_q_p = self.dp(self.tanh(torch.matmul(self.W_q_weight, kilogram) + torch.matmul(torch.matmul(self.W_v_weight, image), C_p.view(C_p.shape[0], C_p.shape[2], C_p.shape[1]))))
+        H_q_s = self.dp(self.tanh(torch.matmul(self.W_q_weight, q_s) + torch.matmul(torch.matmul(self.W_v_weight, image), C_s.view(C_s.shape[0], C_s.shape[2], C_s.shape[1]))))
         
 
         a_v_w = F.softmax(torch.matmul(self.w_hv, H_v_w), dim=1)
