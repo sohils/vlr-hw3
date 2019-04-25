@@ -17,7 +17,7 @@ class VqaDataset(Dataset):
     idx2word_question_base = None
     word2idx_answer_base = None
     idx2word_answer_base = None
-    VqaDataset.max_question_len = None
+    max_question_len = None
 
     def __init__(self, image_dir, question_json_file_path, annotation_json_file_path, image_filename_pattern, base_dict=False, transform=None,
     image_feature_dir=None, image_feature_pattern=None):
