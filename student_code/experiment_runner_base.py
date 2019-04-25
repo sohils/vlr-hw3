@@ -55,6 +55,7 @@ class ExperimentRunnerBase(object):
 
     def validate(self, step):
         # TODO. Should return your validation accuracy
+        acc = []
         for batch_id, batch_data in enumerate(self._val_dataset_loader):
             image_input = batch_data['image'].cuda() if self._cuda else batch_data['image']
             # question_input = batch_data['question'].cuda() if self._cuda else batch_data['question']
@@ -65,13 +66,14 @@ class ExperimentRunnerBase(object):
 
             loss = self._optimize(predicted_answer, ground_truth_indices)
 
-            acc = self.accuracy(predicted_answer, ground_truth_indices)
+            acc = acc.append(self.accuracy(predicted_answer, ground_truth_indices).cpu().numpy()[0])
 
             validate_step = step * len(self._val_dataset_loader) + batch_id
 
             # self.writer.add_scalar('validate/loss', loss, validate_step)
             # self.writer.add_scalar('validate/accuracy', acc[0], validate_step)
-        return acc[0]
+
+        return sum(acc)/len(acc)
 
     def train(self):
 
@@ -115,7 +117,7 @@ class ExperimentRunnerBase(object):
                     val_accuracy = self.validate(current_step/self._test_freq)
                     print("Epoch: {} has val accuracy {}".format(epoch, val_accuracy))
                     # self.writer.add_scalar('test/loss', loss, n_iter)
-                    self.writer.add_scalar('test/accuracy', val_accuracy.cpu().numpy()[0], n_iter)
+                    self.writer.add_scalar('test/accuracy', val_accuracy, n_iter)
                     # TODO: you probably want to plot something here
 
 
