@@ -86,7 +86,8 @@ class ExperimentRunnerBase(object):
                 # This logic should be generic; not specific to either the Simple Baseline or CoAttention.
                 self._model.eval()
                 image_input = batch_data['image'].cuda() if self._cuda else batch_data['image']
-                question_input = batch_data['question'].cuda() if self._cuda else batch_data['question']
+                #question_input = batch_data['question'].cuda() if self._cuda else batch_data['question']
+                question_input = batch_data['question_idxs'].cuda() if self._cuda else batch_data['question_idxs']
                 predicted_answer = self._model(image_input, question_input)
                 ground_truth_answer = batch_data['answer'].cuda() if self._cuda else batch_data['answer']
                 values, ground_truth_indices = ground_truth_answer.max(1)

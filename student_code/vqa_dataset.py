@@ -45,10 +45,10 @@ class VqaDataset(Dataset):
             # Gather all questions
             self.questions_list = self.gather_questions()
             # Create a vocabulary of words
-            self.word2idx_question ,self.idx2word_question = build_volcabulary(self.questions_list, -1)
+            self.word2idx_question ,self.idx2word_question, self.max_question_len = build_volcabulary(self.questions_list, -1)
 
             self.answers_list = self.gather_answers()
-            self.word2idx_answer, self.idx2word_answer = build_volcabulary(self.answers_list, -1)
+            self.word2idx_answer, self.idx2word_answer, _ = build_volcabulary(self.answers_list, -1)
 
             self.valid_annotations = self.ann_idx_to_consider(self.word2idx_answer)
 
@@ -56,9 +56,8 @@ class VqaDataset(Dataset):
             VqaDataset.word2idx_answer_base = self.word2idx_answer
         else:
             self.valid_annotations = self.ann_idx_to_consider(VqaDataset.word2idx_answer_base)
-        print(len(self.valid_annotations))
+
         self.image_features = self.load_image_to_features(image_feature_dir,image_feature_pattern)
-        print(len(self.image_features))
 
 
     def __len__(self):
@@ -103,7 +102,9 @@ class VqaDataset(Dataset):
         answer_vec = torch.zeros(len(VqaDataset.word2idx_answer_base))
         answer_vec[answer_indices] = 1
 
-        item = {'image':img, 'question':question_vec, 'answer':answer_vec}
+        question_indices = question_indices + (self.max_question_len - len(question_indices))*[0]
+        question_indices = torch.tensor(question_indices)
+        item = {'image':img, 'question':question_vec, 'answer':answer_vec, 'question_idxs':question_indices, 'answer_idxs':answer_indices}
 
         return item
     
@@ -183,10 +184,13 @@ class VqaDataset(Dataset):
         return valid_annotations
 
 def build_volcabulary(sentence_lists, max_elemets):
+    max_len = 0
     tokenized_sentences = tokenize_sentences(sentence_lists)
-    vocabulary = []
-    vocabulary_count = []
+    vocabulary = [None]
+    vocabulary_count = [99999]
     for sentence in tokenized_sentences:
+        if len(sentence)>max_len:
+            max_len = len(sentence)
         for token in sentence:
             if token not in vocabulary:
                 vocabulary.append(token)
@@ -201,7 +205,7 @@ def build_volcabulary(sentence_lists, max_elemets):
 
     word2idx = {w: idx for (idx, w) in enumerate(vocabulary)}
     idx2word = {idx: w for (idx, w) in enumerate(vocabulary)}
-    return word2idx, idx2word
+    return word2idx, idx2word, max_len
         
 
 def tokenize_sentences(sentences):
