@@ -66,7 +66,8 @@ class ExperimentRunnerBase(object):
 
             loss = self._optimize(predicted_answer, ground_truth_indices)
 
-            acc = acc.append(self.accuracy(predicted_answer, ground_truth_indices)[0].cpu().numpy())
+            accu = self.accuracy(predicted_answer, ground_truth_indices)[0]
+            acc.append(accu.cpu().numpy())
 
             validate_step = step * len(self._val_dataset_loader) + batch_id
 
