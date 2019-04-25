@@ -57,7 +57,8 @@ class ExperimentRunnerBase(object):
         # TODO. Should return your validation accuracy
         for batch_id, batch_data in enumerate(self._val_dataset_loader):
             image_input = batch_data['image'].cuda() if self._cuda else batch_data['image']
-            question_input = batch_data['question'].cuda() if self._cuda else batch_data['question']
+            # question_input = batch_data['question'].cuda() if self._cuda else batch_data['question']
+            question_input = batch_data['question_idxs'].cuda() if self._cuda else batch_data['question_idxs']
             predicted_answer = self._model(image_input, question_input)
             ground_truth_answer = batch_data['answer'].cuda() if self._cuda else batch_data['answer']
             values, ground_truth_indices = ground_truth_answer.max(1)

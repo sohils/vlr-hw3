@@ -105,7 +105,7 @@ class VqaDataset(Dataset):
         answer_vec[answer_indices] = 1
 
         question_indices = question_indices + (VqaDataset.max_question_len - len(question_indices))*[0]
-        question_indices = torch.tensor(question_indices).long()
+        question_indices = torch.tensor(question_indices)
         item = {'image':img, 'question':question_vec, 'answer':answer_vec, 'question_idxs':question_indices, 'answer_idxs':answer_indices}
         
         return item
