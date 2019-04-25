@@ -32,7 +32,7 @@ class CoattentionNetExperimentRunner(ExperimentRunnerBase):
         
         self.criteron = torch.nn.CrossEntropyLoss()
 
-        self.optimizer = torch.optim.Adam(self._model.parameters(), lr=4e-4, weight_decay=1e-8)
+        self.optimizer = torch.optim.RMSprop(self._model.parameters(), lr=4e-4, weight_decay=1e-8, momentum=0.99)
 
         super().__init__(train_dataset, val_dataset, self._model, batch_size, num_epochs,
                          num_data_loader_workers=num_data_loader_workers)
