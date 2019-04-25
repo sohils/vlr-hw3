@@ -104,6 +104,10 @@ class ExperimentRunnerBase(object):
                     # TODO: you probably want to plot something here
                     self.writer.add_scalar('train/loss', loss, n_iter)
                     self.writer.add_scalar('train/accuracy', acc[0], n_iter)
+                    for tag, value in self._model.named_parameters():
+                        tag = tag.replace('.', '/')
+                        self.writer.add_histogram(tag, value.data.cpu().numpy(), n_iter)
+                        self.writer.add_histogram(tag+'/grad', value.grad.data.cpu().numpy(), n_iter)
 
                 if (current_step % self._test_freq == 0):
                     self._model.eval()
