@@ -70,7 +70,7 @@ class CoattentionNet(nn.Module):
 
         C_w = self.dp(self.tanh(torch.matmul(torch.matmul(word_embeddings.transpose(2,1), self.W_b_weight), image)))
         C_p = self.dp(self.tanh(torch.matmul(torch.matmul(kilogram.transpose(2,1), self.W_b_weight), image)))
-        C_s = self.dp(self.tanh(torch.matmul(torch.matmul(q_s.transpose(2,1, self.W_b_weight), image))))
+        C_s = self.dp(self.tanh(torch.matmul(torch.matmul(q_s.transpose(2,1), self.W_b_weight), image)))
 
         H_v_w = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, word_embeddings), C_w)))
         H_v_p = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, kilogram), C_p)))
