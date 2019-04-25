@@ -45,13 +45,13 @@ class VqaDataset(Dataset):
             # Gather all questions
             self.questions_list = self.gather_questions()
             # Create a vocabulary of words
-            self.word2idx_question ,self.idx2word_question, self.max_question_len = build_volcabulary(self.questions_list, -1)
+            self.word2idx_question ,self.idx2word_question, self.max_question_len = build_volcabulary(self.questions_list, 5216, True)
 
             self.answers_list = self.gather_answers()
-            self.word2idx_answer, self.idx2word_answer, _ = build_volcabulary(self.answers_list, -1)
+            self.word2idx_answer, self.idx2word_answer, _ = build_volcabulary(self.answers_list, 1000, False)
 
             self.valid_annotations = self.ann_idx_to_consider(self.word2idx_answer)
-
+            
             VqaDataset.word2idx_question_base = self.word2idx_question
             VqaDataset.word2idx_answer_base = self.word2idx_answer
         else:
@@ -105,7 +105,7 @@ class VqaDataset(Dataset):
         question_indices = question_indices + (self.max_question_len - len(question_indices))*[0]
         question_indices = torch.tensor(question_indices)
         item = {'image':img, 'question':question_vec, 'answer':answer_vec, 'question_idxs':question_indices, 'answer_idxs':answer_indices}
-
+        
         return item
     
     def load_image_to_features(self, image_feature_dir, image_feature_pattern):
@@ -183,11 +183,15 @@ class VqaDataset(Dataset):
                 valid_annotations.append(idx)
         return valid_annotations
 
-def build_volcabulary(sentence_lists, max_elemets):
+def build_volcabulary(sentence_lists, max_elemets, withNone):
     max_len = 0
     tokenized_sentences = tokenize_sentences(sentence_lists)
-    vocabulary = [None]
-    vocabulary_count = [99999]
+    if(withNone):
+        vocabulary = [None]
+        vocabulary_count = [99999]
+    else:
+        vocabulary = []
+        vocabulary_count = []
     for sentence in tokenized_sentences:
         if len(sentence)>max_len:
             max_len = len(sentence)
