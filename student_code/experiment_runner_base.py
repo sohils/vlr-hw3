@@ -104,7 +104,7 @@ class ExperimentRunnerBase(object):
                     self.writer.add_scalar('train/loss', loss, n_iter)
                     self.writer.add_scalar('train/accuracy', acc[0], n_iter)
 
-                if ((current_step % self._test_freq == 0) and current_step):
+                if (current_step % self._test_freq == 0):
                     self._model.eval()
                     val_accuracy = self.validate(current_step/self._test_freq)
                     print("Epoch: {} has val accuracy {}".format(epoch, val_accuracy))
