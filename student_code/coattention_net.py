@@ -59,8 +59,8 @@ class CoattentionNet(nn.Module):
         # Word Embedding [bx512xT]
         
         unigram = self.tanh(self.unigram(word_embeddings))
-        bigram = self.tanh(self.bigram(torch.cat((word_embeddings, torch.zeros(word_embeddings.shape[0],word_embeddings.shape[1],1)), dim=2)))
-        trigram = self.tanh(self.trigram(torch.cat((word_embeddings, torch.zeros(word_embeddings.shape[0],word_embeddings.shape[1],2)), dim=2)))
+        bigram = self.tanh(self.bigram(torch.cat((word_embeddings, torch.zeros(word_embeddings.shape[0],word_embeddings.shape[1],1).cuda()), dim=2)))
+        trigram = self.tanh(self.trigram(torch.cat((word_embeddings, torch.zeros(word_embeddings.shape[0],word_embeddings.shape[1],2).cuda()), dim=2)))
         # All-Grams [bx512xT]
 
         kilogram = torch.cat((
