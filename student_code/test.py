@@ -12,12 +12,16 @@ class LSTMTagger(nn.Module):
         self.hidden_dim = hidden_dim
 
         self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
-
-        self.unigram = nn.Conv1d(1,1,1)
-        self.bigram = nn.Conv1d(1,1,2)
-        self.trigram = nn.Conv1d(1,1,3)
+        
+        self.unigram = nn.Conv1d(in_channels=embedding_dim,out_channels=embedding_dim,kernel_size=1)
+        self.bigram = nn.Conv1d(embedding_dim,embedding_dim,2)
+        self.trigram = nn.Conv1d(embedding_dim,embedding_dim,3)
         nn.init.constant_(self.unigram.weight, 1)
+        nn.init.constant_(self.bigram.weight, 1)
+        nn.init.constant_(self.trigram.weight, 1)
         nn.init.constant_(self.unigram.bias, 0)
+        nn.init.constant_(self.bigram.bias, 0)
+        nn.init.constant_(self.trigram.bias, 0)
 
         # The LSTM takes word embeddings as inputs, and outputs hidden states
         # with dimensionality hidden_dim.
@@ -28,8 +32,9 @@ class LSTMTagger(nn.Module):
 
     def forward(self, sentence):
         embeds = self.word_embeddings(sentence)
+        print(sentence.shape)
         embeds1 = torch.ones(embeds.shape)
-        unig = self.unigram(embeds1.unsqueeze(1))
+        unig = self.unigram(embeds1.transpose(1,0).unsqueeze(0))
         lstm_out, _ = self.lstm(embeds.view(len(sentence), 1, -1))
         tag_space = self.hidden2tag(lstm_out.view(len(sentence), -1))
         tag_scores = F.log_softmax(tag_space, dim=1)

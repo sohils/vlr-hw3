@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from student_code.parallel_coattention import ParallelCoattention
 
 
 class CoattentionNet(nn.Module):
@@ -11,25 +12,30 @@ class CoattentionNet(nn.Module):
     def __init__(self, vocab_size, embedding_dim, answer_vocab=1000):
         super().__init__()
         self.word_embeddings = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
-        self.unigram = nn.Conv1d(512,512,1)
-        self.bigram = nn.Conv1d(512,512,2)
-        self.trigram = nn.Conv1d(512,512,3)
+        self.unigram = nn.Conv1d(embedding_dim,embedding_dim,1)
+        self.bigram = nn.Conv1d(embedding_dim,embedding_dim,2)
+        self.trigram = nn.Conv1d(embedding_dim,embedding_dim,3)
 
         self.maxp = nn.MaxPool2d(kernel_size=(3,1))
 
         self.lstm = nn.LSTM(embedding_dim, embedding_dim)
         k = 512
-        self.W_b_weight = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(embedding_dim,embedding_dim)))
-        # self.W_b_bias = nn.Parameter(torch.random((embedding_dim)))
 
-        self.W_v_weight = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(k,embedding_dim)))
-        # self.W_v_bias = nn.Parameter(torch.random((embedding_dim)))
+        self.word_parallel = ParallelCoattention(D=embedding_dim, k=k)
+        self.phrase_parallel = ParallelCoattention(D=embedding_dim, k=k)
+        self.sentence_parallel = ParallelCoattention(D=embedding_dim, k=k)
 
-        self.W_q_weight = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(k,embedding_dim)))
-        # self.W_q_bias = nn.Parameter(torch.random((embedding_dim)))
+        # self.W_b_weight = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(embedding_dim,embedding_dim)))
+        # # self.W_b_bias = nn.Parameter(torch.random((embedding_dim)))
 
-        self.w_hv = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(1,k)))
-        self.w_hq = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(1,k)))
+        # self.W_v_weight = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(k,embedding_dim)))
+        # # self.W_v_bias = nn.Parameter(torch.random((embedding_dim)))
+
+        # self.W_q_weight = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(k,embedding_dim)))
+        # # self.W_q_bias = nn.Parameter(torch.random((embedding_dim)))
+
+        # self.w_hv = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(1,k)))
+        # self.w_hq = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(1,k)))
 
         self.dp = nn.Dropout(p=0.5)
         self.tanh = nn.Tanh()
@@ -68,42 +74,9 @@ class CoattentionNet(nn.Module):
         q_s, (h_n,c_n) = self.lstm(kilogram.transpose(2,1))
         q_s = q_s.transpose(2,1)
 
-        C_w = self.dp(self.tanh(torch.matmul(torch.matmul(word_embeddings.transpose(2,1), self.W_b_weight), image)))
-        C_p = self.dp(self.tanh(torch.matmul(torch.matmul(kilogram.transpose(2,1), self.W_b_weight), image)))
-        C_s = self.dp(self.tanh(torch.matmul(torch.matmul(q_s.transpose(2,1), self.W_b_weight), image)))
-
-        H_v_w = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, word_embeddings), C_w)))
-        H_v_p = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, kilogram), C_p)))
-        H_v_s = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, q_s), C_s)))
-
-        H_q_w = self.dp(self.tanh(torch.matmul(self.W_q_weight, word_embeddings) + torch.matmul(torch.matmul(self.W_v_weight, image), C_w.transpose(2,1))))
-        H_q_p = self.dp(self.tanh(torch.matmul(self.W_q_weight, kilogram) + torch.matmul(torch.matmul(self.W_v_weight, image), C_p.transpose(2,1))))
-        H_q_s = self.dp(self.tanh(torch.matmul(self.W_q_weight, q_s) + torch.matmul(torch.matmul(self.W_v_weight, image), C_s.transpose(2,1))))
-        
-
-        a_v_w = F.softmax(torch.matmul(self.w_hv, H_v_w), dim=1)
-        a_q_w = F.softmax(torch.matmul(self.w_hq, H_q_w), dim=1)
-
-        a_v_p = F.softmax(torch.matmul(self.w_hv, H_v_p), dim=1)
-        a_q_p = F.softmax(torch.matmul(self.w_hq, H_q_p), dim=1)
-
-        a_v_s = F.softmax(torch.matmul(self.w_hv, H_v_s), dim=1)
-        a_q_s = F.softmax(torch.matmul(self.w_hq, H_q_s), dim=1)
-
-        v_w = torch.bmm(a_v_w, image.transpose(2,1))
-        b_w = torch.bmm(a_q_w, word_embeddings.transpose(2,1))
-        f_w = v_w + b_w
-        f_w = f_w.view(f_w.shape[0], f_w.shape[2])
-
-        v_p = torch.bmm(a_v_p, image.transpose(2,1))
-        b_p = torch.bmm(a_q_p, word_embeddings.transpose(2,1))
-        f_p = v_p + b_p
-        f_p = f_p.view(f_p.shape[0], f_p.shape[2])
-
-        v_s = torch.bmm(a_v_s, image.transpose(2,1))
-        b_s = torch.bmm(a_q_s, q_s.transpose(2,1))
-        f_s = v_s + b_s
-        f_s = f_s.view(f_s.shape[0], f_s.shape[2])
+        f_w = self.word_parallel(image, word_embeddings)
+        f_p = self.phrase_parallel(image, kilogram)
+        f_s = self.sentence_parallel(image, q_s)
 
         h_w = self.tanh(self.lin_w(f_w))
         h_p = self.tanh(self.lin_p(torch.cat((f_p,h_w),dim=1)))
@@ -210,3 +183,40 @@ class CoattentionNet(nn.Module):
 
         # p = F.softmax(self.lin_h(h_s),dim=1)
         # return p
+
+        # C_w = self.dp(self.tanh(torch.matmul(torch.matmul(word_embeddings.transpose(2,1), self.W_b_weight), image)))
+        # C_p = self.dp(self.tanh(torch.matmul(torch.matmul(kilogram.transpose(2,1), self.W_b_weight), image)))
+        # C_s = self.dp(self.tanh(torch.matmul(torch.matmul(q_s.transpose(2,1), self.W_b_weight), image)))
+
+        # H_v_w = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, word_embeddings), C_w)))
+        # H_v_p = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, kilogram), C_p)))
+        # H_v_s = self.dp(self.tanh(torch.matmul(self.W_v_weight,image) + torch.matmul(torch.matmul(self.W_q_weight, q_s), C_s)))
+
+        # H_q_w = self.dp(self.tanh(torch.matmul(self.W_q_weight, word_embeddings) + torch.matmul(torch.matmul(self.W_v_weight, image), C_w.transpose(2,1))))
+        # H_q_p = self.dp(self.tanh(torch.matmul(self.W_q_weight, kilogram) + torch.matmul(torch.matmul(self.W_v_weight, image), C_p.transpose(2,1))))
+        # H_q_s = self.dp(self.tanh(torch.matmul(self.W_q_weight, q_s) + torch.matmul(torch.matmul(self.W_v_weight, image), C_s.transpose(2,1))))
+        
+
+        # a_v_w = F.softmax(torch.matmul(self.w_hv, H_v_w), dim=1)
+        # a_q_w = F.softmax(torch.matmul(self.w_hq, H_q_w), dim=1)
+
+        # a_v_p = F.softmax(torch.matmul(self.w_hv, H_v_p), dim=1)
+        # a_q_p = F.softmax(torch.matmul(self.w_hq, H_q_p), dim=1)
+
+        # a_v_s = F.softmax(torch.matmul(self.w_hv, H_v_s), dim=1)
+        # a_q_s = F.softmax(torch.matmul(self.w_hq, H_q_s), dim=1)
+
+        # v_w = torch.bmm(a_v_w, image.transpose(2,1))
+        # b_w = torch.bmm(a_q_w, word_embeddings.transpose(2,1))
+        # f_w = v_w + b_w
+        # f_w = f_w.view(f_w.shape[0], f_w.shape[2])
+
+        # v_p = torch.bmm(a_v_p, image.transpose(2,1))
+        # b_p = torch.bmm(a_q_p, word_embeddings.transpose(2,1))
+        # f_p = v_p + b_p
+        # f_p = f_p.view(f_p.shape[0], f_p.shape[2])
+
+        # v_s = torch.bmm(a_v_s, image.transpose(2,1))
+        # b_s = torch.bmm(a_q_s, q_s.transpose(2,1))
+        # f_s = v_s + b_s
+        # f_s = f_s.view(f_s.shape[0], f_s.shape[2])
