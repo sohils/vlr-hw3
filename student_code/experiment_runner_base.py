@@ -40,6 +40,7 @@ class ExperimentRunnerBase(object):
         Computes the accuracy over the k top predictions for the specified values of k
         """
         with torch.no_grad():
+            output = torch.softmax(output, dim=1)
             maxk = max(topk)
             batch_size = target.size(0)
 

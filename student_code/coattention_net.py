@@ -88,7 +88,7 @@ class CoattentionNet(nn.Module):
         h_p = self.tanh(self.lin_p(torch.cat((f_p,h_w),dim=1)))
         h_s = self.tanh(self.lin_s(torch.cat((f_s,h_p),dim=1)))
         
-        p = F.softmax(self.lin_h(h_s),dim=1)
+        p = self.lin_h(h_s)
         # v_short = self.lin_v_short(image.contiguous().view(image.shape[0],-1))
         # q_short = self.lin_s_short(q_s.contiguous().view(q_s.shape[0],-1))
         
