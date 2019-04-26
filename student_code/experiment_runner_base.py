@@ -91,8 +91,8 @@ class ExperimentRunnerBase(object):
                 # TODO: Run the model and get the ground truth answers that you'll pass to your optimizer
                 # This logic should be generic; not specific to either the Simple Baseline or CoAttention.
                 image_input = batch_data['image'].cuda() if self._cuda else batch_data['image']
-                #question_input = batch_data['question'].cuda() if self._cuda else batch_data['question']
-                question_input = batch_data['question_idxs'].cuda() if self._cuda else batch_data['question_idxs']
+                question_input = batch_data['question'].cuda() if self._cuda else batch_data['question']
+                question_indices_input = batch_data['question_idxs'].cuda() if self._cuda else batch_data['question_idxs']
                 predicted_answer = self._model(image_input, question_input)
                 ground_truth_answer = batch_data['answer'].cuda() if self._cuda else batch_data['answer']
                 values, ground_truth_indices = ground_truth_answer.max(1)

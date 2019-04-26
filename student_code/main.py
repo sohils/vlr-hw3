@@ -1,12 +1,13 @@
 import argparse
 from student_code.simple_baseline_experiment_runner import SimpleBaselineExperimentRunner
+from student_code.simple_baseline_2_experiment_runner import SimpleBaseline2ExperimentRunner
 from student_code.coattention_experiment_runner import CoattentionNetExperimentRunner
 
 
 if __name__ == "__main__":
     # Feel free to add more args, or change/remove these.
     parser = argparse.ArgumentParser(description='Load VQA.')
-    parser.add_argument('--model', type=str, choices=['simple', 'coattention'], default='simple')
+    parser.add_argument('--model', type=str, choices=['simple', 'coattention','simple2'], default='simple')
     parser.add_argument('--train_image_dir', type=str)
     parser.add_argument('--train_question_path', type=str)
     parser.add_argument('--train_annotation_path', type=str)
@@ -24,6 +25,8 @@ if __name__ == "__main__":
         experiment_runner_class = SimpleBaselineExperimentRunner
     elif args.model == "coattention":
         experiment_runner_class = CoattentionNetExperimentRunner
+    elif args.model == "simple2":
+        experiment_runner_class = SimpleBaseline2ExperimentRunner
     else:
         raise ModuleNotFoundError()
 

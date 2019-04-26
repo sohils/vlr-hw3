@@ -32,7 +32,7 @@ class LSTMTagger(nn.Module):
 
     def forward(self, sentence):
         embeds = self.word_embeddings(sentence)
-        print(sentence.shape)
+        print(embeds.shape)
         embeds1 = torch.ones(embeds.shape)
         unig = self.unigram(embeds1.transpose(1,0).unsqueeze(0))
         lstm_out, _ = self.lstm(embeds.view(len(sentence), 1, -1))
