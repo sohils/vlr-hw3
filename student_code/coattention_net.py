@@ -9,7 +9,7 @@ class CoattentionNet(nn.Module):
     Predicts an answer to a question about an image using the Hierarchical Question-Image Co-Attention
     for Visual Question Answering (Lu et al, 2017) paper.
     """
-    def __init__(self, vocab_size, embedding_dim, answer_vocab=1000):
+    def __init__(self, vocab_size, embedding_dim, max_len,answer_vocab=1000):
         super().__init__()
         self.word_embeddings = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
         self.unigram = nn.Conv1d(embedding_dim,embedding_dim,1)
@@ -21,9 +21,13 @@ class CoattentionNet(nn.Module):
         self.lstm = nn.LSTM(embedding_dim, embedding_dim)
         k = 512
 
-        self.word_parallel = ParallelCoattention(D=embedding_dim, k=k)
-        self.phrase_parallel = ParallelCoattention(D=embedding_dim, k=k)
-        self.sentence_parallel = ParallelCoattention(D=embedding_dim, k=k)
+        # self.word_parallel = ParallelCoattention(D=embedding_dim, k=k)
+        # self.phrase_parallel = ParallelCoattention(D=embedding_dim, k=k)
+        # self.sentence_parallel = ParallelCoattention(D=embedding_dim, k=k)
+
+        self.lin_v_short = nn.Linear(512*196,1024)
+        self.lin_s_short = nn.Linear(512*max_len, 1024)
+        self.lin_ans_short = nn.Linear(2048,answer_vocab)
 
         # self.W_b_weight = nn.Parameter(nn.init.xavier_uniform_(torch.FloatTensor(embedding_dim,embedding_dim)))
         # # self.W_b_bias = nn.Parameter(torch.random((embedding_dim)))
@@ -41,11 +45,11 @@ class CoattentionNet(nn.Module):
         self.tanh = nn.Tanh()
         self.softm = nn.Softmax()
 
-        self.lin_w = nn.Linear(512,512)
-        self.lin_p = nn.Linear(1024,512)
-        self.lin_s = nn.Linear(1024,1024)
+        # self.lin_w = nn.Linear(512,512)
+        # self.lin_p = nn.Linear(1024,512)
+        # self.lin_s = nn.Linear(1024,1024)
         
-        self.lin_h = nn.Linear(1024,answer_vocab)
+        # self.lin_h = nn.Linear(1024,answer_vocab)
         
         
 
@@ -74,15 +78,23 @@ class CoattentionNet(nn.Module):
         q_s, (h_n,c_n) = self.lstm(kilogram.permute(2,0,1))
         q_s = q_s.permute(1,2,0)
 
-        f_w = self.word_parallel(image, word_embeddings)
-        f_p = self.phrase_parallel(image, kilogram)
-        f_s = self.sentence_parallel(image, q_s)
-
-        h_w = self.tanh(self.lin_w(f_w))
-        h_p = self.tanh(self.lin_p(torch.cat((f_p,h_w),dim=1)))
-        h_s = self.tanh(self.lin_s(torch.cat((f_s,h_p),dim=1)))
         
-        p = F.softmax(self.lin_h(h_s),dim=1)
+
+        # f_w = self.word_parallel(image, word_embeddings)
+        # f_p = self.phrase_parallel(image, kilogram)
+        # f_s = self.sentence_parallel(image, q_s)
+
+        # h_w = self.tanh(self.lin_w(f_w))
+        # h_p = self.tanh(self.lin_p(torch.cat((f_p,h_w),dim=1)))
+        # h_s = self.tanh(self.lin_s(torch.cat((f_s,h_p),dim=1)))
+        
+        # p = F.softmax(self.lin_h(h_s),dim=1)
+        v_short = self.lin_v_short(image.contiguous().view(image.shape[0],-1))
+        q_short = self.lin_s_short(q_s.contiguous().view(q_s.shape[0],-1))
+        
+        h = torch.cat((v_short,q_short),dim=1)
+        
+        p = F.softmax(self.lin_ans_short(h),dim=1)
         
         return p
         
