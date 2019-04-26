@@ -18,8 +18,8 @@ class SimpleBaselineNet2(nn.Module):
 
         self.answering = nn.Sequential(nn.Linear(word_feature_szie, answer_dict_size))
 
-        self.image_weight = nn.Parameter(nn.init.uniform_(torch.FloatTensor(1)))
-        self.question_weight = nn.Parameter(nn.init.uniform_(torch.FloatTensor(1)))
+        self.image_weight = nn.Parameter(torch.tensor(0.50), requires_grad=True)
+        self.question_weight = nn.Parameter(torch.tensor(0.50), requires_grad=True)
 
 
     def forward(self, image, question_encoding):
