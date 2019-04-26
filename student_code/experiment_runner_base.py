@@ -97,6 +97,7 @@ class ExperimentRunnerBase(object):
                 values, ground_truth_indices = ground_truth_answer.max(1)
                 # ============
                 # Optimize the model according to the predictions
+                print(predicted_answer.argmax(1))
                 loss = self._optimize(predicted_answer, ground_truth_indices, train=True)
 
                 acc = self.accuracy(predicted_answer, ground_truth_indices)
