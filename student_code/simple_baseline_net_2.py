@@ -11,7 +11,7 @@ class SimpleBaselineNet2(nn.Module):
         super().__init__()
         self.image_feature = image_feature
         # Visual features
-        self.leNet = googlenet.googlenet(pretrained=True, only_features=True)
+        # self.leNet = googlenet.googlenet(pretrained=True, only_features=True)
 
         # Question features
         self.question_embedding = nn.Sequential(nn.Linear(question_dict_size, word_feature_szie))
@@ -28,7 +28,7 @@ class SimpleBaselineNet2(nn.Module):
         else:
             # N x 1024
             image_features = self.leNet(image)
-
+        image_features = image_features.view(image_features.shape[0],image_features.shape[2])
         # N x 1024
         word_embeddings = self.question_embedding(question_encoding)
         wr = self.question_weight*word_embeddings
