@@ -70,9 +70,9 @@ class CoattentionNet(nn.Module):
         ), dim=2)
         kilogram = self.maxp(kilogram)
         kilogram = kilogram.view(kilogram.shape[0],kilogram.shape[1],kilogram.shape[3])
-
-        q_s, (h_n,c_n) = self.lstm(kilogram.transpose(2,1))
-        q_s = q_s.transpose(2,1)
+        
+        q_s, (h_n,c_n) = self.lstm(kilogram.permute(2,0,1))
+        q_s = q_s.permute(1,2,0)
 
         f_w = self.word_parallel(image, word_embeddings)
         f_p = self.phrase_parallel(image, kilogram)
